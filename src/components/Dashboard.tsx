@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { Student } from "../types";
 import { getUnpaidOverdueMonths } from "./StudentList";
-import { getInstitutionName } from "../lib/firestoreService";
+import { getInstitutionName, subscribeToAnnouncements, saveAnnouncementDoc, deleteAnnouncementDoc } from "../lib/firestoreService";
 
 interface DashboardProps {
   students: Student[];
@@ -84,34 +84,22 @@ export default function Dashboard({
       text: newAnnouncement.trim(),
       date: new Date().toISOString().slice(0, 10)
     };
-    const updated = [item, ...announcements];
-    setAnnouncements(updated);
-    localStorage.setItem("tuition_announcements", JSON.stringify(updated));
+    saveAnnouncementDoc(item);
     setNewAnnouncement("");
-    window.dispatchEvent(new Event("storage"));
   };
 
   const handleDeleteAnnouncement = (id: string) => {
-    const updated = announcements.filter((a) => a.id !== id);
-    setAnnouncements(updated);
-    localStorage.setItem("tuition_announcements", JSON.stringify(updated));
-    window.dispatchEvent(new Event("storage"));
+    deleteAnnouncementDoc(id);
   };
 
-  // Sync state if localStorage changes in other tabs/windows
+  // Sync state in real-time
   useEffect(() => {
-    const handleStorageChange = () => {
-      try {
-        const cached = localStorage.getItem("tuition_announcements");
-        if (cached) {
-          setAnnouncements(JSON.parse(cached));
-        } else {
-          setAnnouncements([]);
-        }
-      } catch {}
+    const unsub = subscribeToAnnouncements((list) => {
+      setAnnouncements(list);
+    });
+    return () => {
+      unsub();
     };
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   // Trigger rotation for refresh

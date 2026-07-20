@@ -565,3 +565,140 @@ export async function deleteUserAuthCredentials(uid: string): Promise<void> {
     console.error(`Error deleting auth credentials for user ${uid}:`, err);
   }
 }
+
+/**
+ * Subscribe to announcements in real-time
+ */
+export function subscribeToAnnouncements(
+  onUpdate: (announcements: any[]) => void,
+  onError?: (err: any) => void
+): () => void {
+  let unsubscribeFirestore: (() => void) | null = null;
+  let active = true;
+
+  const STORAGE_KEY_ANNOUNCEMENTS = "tuition_announcements";
+
+  const getCachedAnnouncements = () => {
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY_ANNOUNCEMENTS);
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  async function setup() {
+    const db = await getFirebaseDb();
+    if (!active) return;
+
+    if (!db) {
+      // Local fallback
+      onUpdate(getCachedAnnouncements());
+      const handleLocalEvent = () => {
+        if (active) onUpdate(getCachedAnnouncements());
+      };
+      window.addEventListener("storage", handleLocalEvent);
+      unsubscribeFirestore = () => {
+        window.removeEventListener("storage", handleLocalEvent);
+      };
+      return;
+    }
+
+    try {
+      const colRef = collection(db, "announcements");
+      unsubscribeFirestore = onSnapshot(
+        colRef,
+        (snap) => {
+          if (!active) return;
+          const list: any[] = [];
+          snap.forEach((doc) => {
+            list.push(doc.data());
+          });
+          // Sort descending by date/id
+          list.sort((a, b) => {
+            const dateA = a.date || "";
+            const dateB = b.date || "";
+            if (dateA !== dateB) return dateB.localeCompare(dateA);
+            return (b.id || "").localeCompare(a.id || "");
+          });
+          onUpdate(list);
+          localStorage.setItem(STORAGE_KEY_ANNOUNCEMENTS, JSON.stringify(list));
+        },
+        (err) => {
+          console.error("Firestore announcements snapshot error", err);
+          if (onError) onError(err);
+          onUpdate(getCachedAnnouncements());
+        }
+      );
+    } catch (err) {
+      console.warn("Failed to subscribe to announcements, using local fallback", err);
+      onUpdate(getCachedAnnouncements());
+    }
+  }
+
+  setup();
+
+  return () => {
+    active = false;
+    if (unsubscribeFirestore) {
+      unsubscribeFirestore();
+    }
+  };
+}
+
+/**
+ * Save an announcement
+ */
+export async function saveAnnouncementDoc(announcement: { id: string; text: string; date: string }): Promise<void> {
+  const STORAGE_KEY_ANNOUNCEMENTS = "tuition_announcements";
+  const db = await getFirebaseDb();
+  if (!db) {
+    // Local fallback
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY_ANNOUNCEMENTS);
+      const list = cached ? JSON.parse(cached) : [];
+      const updated = [announcement, ...list.filter((a: any) => a.id !== announcement.id)];
+      localStorage.setItem(STORAGE_KEY_ANNOUNCEMENTS, JSON.stringify(updated));
+      window.dispatchEvent(new Event("storage"));
+    } catch (e) {
+      console.error(e);
+    }
+    return;
+  }
+
+  try {
+    const docRef = doc(db, "announcements", announcement.id);
+    await setDoc(docRef, announcement);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, `announcements/${announcement.id}`);
+  }
+}
+
+/**
+ * Delete an announcement
+ */
+export async function deleteAnnouncementDoc(id: string): Promise<void> {
+  const STORAGE_KEY_ANNOUNCEMENTS = "tuition_announcements";
+  const db = await getFirebaseDb();
+  if (!db) {
+    // Local fallback
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY_ANNOUNCEMENTS);
+      const list = cached ? JSON.parse(cached) : [];
+      const updated = list.filter((a: any) => a.id !== id);
+      localStorage.setItem(STORAGE_KEY_ANNOUNCEMENTS, JSON.stringify(updated));
+      window.dispatchEvent(new Event("storage"));
+    } catch (e) {
+      console.error(e);
+    }
+    return;
+  }
+
+  try {
+    const docRef = doc(db, "announcements", id);
+    await deleteDoc(docRef);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.DELETE, `announcements/${id}`);
+  }
+}
+

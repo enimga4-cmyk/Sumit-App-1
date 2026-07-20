@@ -28,7 +28,10 @@ import {
   getAllAdmins, 
   saveUserDocument, 
   deleteUserDocument,
-  deleteUserAuthCredentials
+  deleteUserAuthCredentials,
+  subscribeToAnnouncements,
+  saveAnnouncementDoc,
+  deleteAnnouncementDoc
 } from "../lib/firestoreService";
 import { createNewUserAuth, getFirebaseAuth } from "../lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
@@ -94,21 +97,24 @@ export default function Settings({
       text: newAnnouncement.trim(),
       date: new Date().toISOString().slice(0, 10)
     };
-    const updated = [item, ...announcements];
-    setAnnouncements(updated);
-    localStorage.setItem("tuition_announcements", JSON.stringify(updated));
+    saveAnnouncementDoc(item);
     setNewAnnouncement("");
-    window.dispatchEvent(new Event("storage"));
     triggerNotification("Announcement posted successfully!");
   };
 
   const handleDeleteAnnouncement = (id: string) => {
-    const updated = announcements.filter((a) => a.id !== id);
-    setAnnouncements(updated);
-    localStorage.setItem("tuition_announcements", JSON.stringify(updated));
-    window.dispatchEvent(new Event("storage"));
+    deleteAnnouncementDoc(id);
     triggerNotification("Announcement deleted.");
   };
+
+  useEffect(() => {
+    const unsub = subscribeToAnnouncements((list) => {
+      setAnnouncements(list);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
 
   const handleSaveSettingsInstName = async () => {
     if (!settingsInstName.trim()) {
