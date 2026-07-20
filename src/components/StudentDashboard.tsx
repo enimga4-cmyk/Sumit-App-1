@@ -36,7 +36,24 @@ import {
   Coins,
   GraduationCap,
   Train,
-  Shield
+  Shield,
+  Magnet,
+  Beaker,
+  Laptop,
+  Code,
+  LineChart,
+  Briefcase,
+  Scale,
+  Leaf,
+  Palette,
+  Music,
+  Dumbbell,
+  Lightbulb,
+  ShoppingBag,
+  Brain,
+  PieChart,
+  BarChart,
+  Book
 } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { AnimatePresence, motion } from "motion/react";
@@ -84,7 +101,7 @@ export function generateSubjectPdfReport(student: Student, subject: string, note
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(`Generated on: ${currentDate}`, 14, 29);
-  doc.text(`App Version: 3.1.2`, 14, 34);
+  doc.text(`App Version: 3.2.0`, 14, 34);
 
   // Student & Subject Info Section
   doc.setTextColor(15, 23, 42); // slate-900
@@ -465,16 +482,11 @@ function getWeeklyAttendanceDays(student: Student) {
     current.setDate(monday.getDate() + offset);
     const key = current.toISOString().slice(0, 10);
     const rawValue = student.attendance?.[key];
-    const isWeekend = current.getDay() === 0 || current.getDay() === 6;
 
     if (rawValue === true) {
       entries.push({ label: current.toLocaleDateString("en-IN", { weekday: "short" }), key, status: "present" });
     } else if (rawValue === false) {
       entries.push({ label: current.toLocaleDateString("en-IN", { weekday: "short" }), key, status: "absent" });
-    } else if (isWeekend && current.getDay() === 6) {
-      entries.push({ label: current.toLocaleDateString("en-IN", { weekday: "short" }), key, status: "holiday" });
-    } else if (current.getDay() === 0 && rawValue === undefined) {
-      continue;
     } else {
       entries.push({ label: current.toLocaleDateString("en-IN", { weekday: "short" }), key, status: "na" });
     }
@@ -549,7 +561,7 @@ function StudentDetailsModal({ isOpen, onClose, student, formatDate }: StudentDe
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/70 p-3 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-lg max-h-[80vh] overflow-hidden rounded-[30px] border border-slate-200/70 bg-white p-4 shadow-2xl flex flex-col" onClick={(event) => event.stopPropagation()}>
+      <div className="w-full max-w-lg max-h-[85vh] overflow-hidden rounded-[30px] border border-slate-200/70 bg-white p-4 shadow-2xl flex flex-col" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-start justify-between border-b border-slate-100 pb-2 shrink-0">
           <div>
             <h3 className="text-base font-black text-slate-900">Student Details</h3>
@@ -559,7 +571,7 @@ function StudentDetailsModal({ isOpen, onClose, student, formatDate }: StudentDe
           </button>
         </div>
         
-        <div className="mt-3 flex flex-col gap-2.5 overflow-y-auto pr-1">
+        <div className="mt-3 flex flex-col gap-2.5 overflow-y-auto pr-1 min-h-0 flex-1">
           <div className="rounded-2xl border border-slate-100 bg-slate-50 p-2.5">
             <p className="text-[9px] font-black uppercase tracking-[0.24em] text-slate-400">Student</p>
             <p className="mt-0.5 text-sm font-black text-slate-900">{student.name}</p>
@@ -805,9 +817,9 @@ function AttendanceCard({ attendanceStats, weeklyAttendance, onOpenSheet }: Atte
         </div>
       </div>
 
-      <div className="mt-3.5 rounded-[18px] border border-slate-200 bg-slate-50 p-2 sm:p-2.5">
-        <div className="grid grid-cols-6 gap-0.5 sm:gap-1.5">
-          {displayEntries.slice(0, 6).map((entry) => {
+      <div className="mt-3 rounded-[18px] border border-slate-200 bg-slate-50 p-2 sm:p-3 flex-1 flex flex-col justify-center min-h-[92px]">
+        <div className="grid grid-cols-7 gap-1">
+          {displayEntries.slice(0, 7).map((entry) => {
             const isPresent = entry.status === "present";
             const isAbsent = entry.status === "absent";
             const isHoliday = entry.status === "holiday";
@@ -818,8 +830,8 @@ function AttendanceCard({ attendanceStats, weeklyAttendance, onOpenSheet }: Atte
               <div key={entry.key} className="flex flex-col items-center text-center">
                 <div className="text-[7px] font-black uppercase tracking-tight text-slate-400">{dayLabel}</div>
                 <div className="mt-0.5 text-[9px] font-black text-slate-700">{dateLabel}</div>
-                <div className={`mt-1 flex h-4.5 w-4.5 sm:h-5 sm:w-5 items-center justify-center rounded-full border text-[8px] font-black ${isPresent ? "border-emerald-200 bg-emerald-100 text-emerald-700" : isAbsent ? "border-rose-200 bg-rose-100 text-rose-600" : isHoliday ? "border-slate-250 bg-slate-200 text-slate-500" : "border-slate-200 bg-slate-100 text-slate-400"}`}>
-                  {isPresent ? "✓" : isAbsent ? "✕" : isHoliday ? "H" : "NA"}
+                <div className={`mt-1 flex h-4.5 w-4.5 sm:h-5 sm:w-5 items-center justify-center rounded-full border text-[8px] font-black ${isPresent ? "border-emerald-200 bg-emerald-100 text-emerald-700" : isAbsent ? "border-red-500 bg-red-50 text-red-600 font-black text-[11px] sm:text-[12px] shadow-xs" : "border-slate-200 bg-slate-100 text-slate-400"}`}>
+                  {isPresent ? "✓" : isAbsent ? "✕" : "NA"}
                 </div>
               </div>
             );
@@ -855,7 +867,6 @@ function FeeCard({ student, currentMonthName, currentMonthStatus, pendingMonths,
             </div>
             <div className="min-w-0">
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-600">Fees</p>
-              <p className="mt-0.5 truncate text-[11px] sm:text-xs font-semibold tracking-tight text-slate-900">Tuition Fee</p>
             </div>
           </div>
           <button onClick={(e) => { e.stopPropagation(); onOpenSheet(); }} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 transition hover:border-slate-300 hover:bg-slate-100" aria-label="Open fee history">
@@ -873,21 +884,21 @@ function FeeCard({ student, currentMonthName, currentMonthStatus, pendingMonths,
         </div>
       </div>
 
-      <div className="mt-3.5 rounded-[18px] border border-orange-100 bg-orange-50 p-2 sm:p-2.5">
-        <div className="grid gap-1 text-[10px] sm:text-[11px] text-slate-700">
-          <div className="flex items-center justify-between gap-1.5">
-            <span className="flex items-center gap-1.5 text-slate-600 truncate">
+      <div className="mt-3 rounded-[18px] border border-orange-100 bg-orange-50 p-3 sm:p-3.5 flex-1 flex flex-col justify-center min-h-[92px]">
+        <div className="flex flex-col gap-2.5 text-[10px] sm:text-[11.5px] text-slate-700 w-full">
+          <div className="flex items-center justify-between w-full min-w-0">
+            <span className="flex items-center gap-1.5 text-slate-600 min-w-0 flex-1">
               <ReceiptText className="h-3.5 w-3.5 text-orange-600 shrink-0" />
-              Pending Months
+              <span className="truncate">Pending Months</span>
             </span>
-            <span className="font-black text-slate-900">{pendingMonths.length}</span>
+            <span className="font-black text-slate-900 text-right shrink-0 ml-2">{pendingMonths.length}</span>
           </div>
-          <div className="flex items-center justify-between gap-1.5">
-            <span className="flex items-center gap-1.5 text-slate-600 truncate">
+          <div className="flex items-center justify-between w-full min-w-0">
+            <span className="flex items-center gap-1.5 text-slate-600 min-w-0 flex-1">
               <CircleDollarSign className="h-3.5 w-3.5 text-orange-600 shrink-0" />
-              Pending Amount
+              <span className="truncate">Pending Amount</span>
             </span>
-            <span className="font-black text-slate-900">₹{totalPendingAmount}</span>
+            <span className="font-black text-slate-900 text-right shrink-0 ml-2">₹{totalPendingAmount}</span>
           </div>
         </div>
       </div>
@@ -1282,23 +1293,33 @@ export function getSubjectColor(subject: string): SubjectColorPalette {
 
 export function getSubjectIcon(subject: string, index?: number) {
   const norm = subject.toLowerCase().trim();
-  if (norm.includes("math")) return Calculator;
-  if (norm.includes("physic")) return Atom;
-  if (norm.includes("chemistry")) return FlaskConical;
+  
+  if (norm.includes("mathematics") || norm.includes("math")) return Calculator;
+  if (norm.includes("environmental science") || norm.includes("evs") || norm.includes("environment")) return Leaf;
+  if (norm.includes("computer science") || norm.includes("computer") || norm.includes("code") || norm.includes("coding") || norm.includes("laptop")) return Laptop;
+  if (norm.includes("physics")) return Magnet;
+  if (norm.includes("chemistry")) return Beaker;
   if (norm.includes("biology")) return Dna;
-  if (norm.includes("science") && !norm.includes("social")) return Microscope;
-  if (norm.includes("social")) return Users;
-  if (norm.includes("history")) return Scroll;
-  if (norm.includes("geography")) return Compass;
-  if (norm.includes("economic")) return Coins;
-  if (norm.includes("political") || norm.includes("civics")) return Landmark;
+  if (norm.includes("science") && !norm.includes("social") && !norm.includes("political")) return Atom;
   if (norm.includes("english")) return Languages;
-  if (norm.includes("hindi") || norm.includes("nepali")) return BookOpen;
-  if (norm.includes("ssc") || norm.includes("upsc")) return GraduationCap;
-  if (norm.includes("railway")) return Train;
-  if (norm.includes("banking") || norm.includes("bank")) return Coins;
-  if (norm.includes("defence") || norm.includes("defense")) return Shield;
-  if (norm.includes("computer") || norm.includes("code")) return Cpu;
+  if (norm.includes("hindi")) return BookOpen;
+  if (norm.includes("economics") || norm.includes("economic")) return LineChart;
+  if (norm.includes("accountancy") || norm.includes("accounting")) return Book;
+  if (norm.includes("business studies") || norm.includes("business")) return Briefcase;
+  if (norm.includes("history")) return Scroll;
+  if (norm.includes("geography")) return Globe;
+  if (norm.includes("political science") || norm.includes("political")) return Landmark;
+  if (norm.includes("civics")) return Scale;
+  if (norm.includes("indian heritage") || norm.includes("culture") || norm.includes("heritage")) return Landmark;
+  if (norm.includes("art")) return Palette;
+  if (norm.includes("music")) return Music;
+  if (norm.includes("physical education") || norm.includes("pe") || norm.includes("sports")) return Dumbbell;
+  if (norm.includes("general knowledge") || norm.includes("gk")) return Lightbulb;
+  if (norm.includes("commerce")) return ShoppingBag;
+  if (norm.includes("sanskrit")) return BookOpen;
+  if (norm.includes("psychology")) return Brain;
+  if (norm.includes("statistics") || norm.includes("stats")) return PieChart;
+  if (norm.includes("social")) return Users;
 
   const fallbackIcons = [BookOpen, Cpu, Atom, FlaskConical, Dna, Microscope, Scroll, Languages, Calculator, Landmark];
   if (index !== undefined) {
@@ -1946,8 +1967,8 @@ export default function StudentDashboard({
                   <Bell className="h-4.5 w-4.5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Academy Announcements</h3>
-                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Latest updates from Admin</p>
+                  <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Announcements</h3>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Latest updates</p>
                 </div>
               </div>
               <button onClick={() => setShowAnnouncementsModal(false)} className="rounded-full bg-slate-100 dark:bg-slate-800 p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer">
